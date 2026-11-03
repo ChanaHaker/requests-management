@@ -5,7 +5,7 @@ using RequestsManagement.DAL.Entities;
 namespace RequestsManagement.DAL.Repositories;
 
 /// <summary>
-/// The only place that queries the Requests table.
+/// The only place that accesses the Requests and RequestStatusHistory tables.
 /// Filtering, sorting and paging are composed as IQueryable and executed by SQL Server,
 /// so only one page of rows is ever loaded into memory.
 /// </summary>
@@ -17,6 +17,8 @@ public class RequestRepository : IRequestRepository
     {
         _context = context;
     }
+
+    // ---------- Read operations ----------
 
     public async Task<(IReadOnlyList<Request> Items, int TotalCount)> GetPagedAsync(
         RequestFilter filter,
@@ -42,6 +44,9 @@ public class RequestRepository : IRequestRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 
+    public Task<bool> ExistsAsync(int id, CancellationToken cancellationToken) =>
+        _context.Requests.AnyAsync(r => r.Id == id, cancellationToken);
+
     // GROUP BY in the database, covered by the (Status, CreatedAt) index.
     public async Task<IReadOnlyDictionary<RequestStatus, int>> CountByStatusAsync(CancellationToken cancellationToken) =>
         await _context.Requests
@@ -57,6 +62,50 @@ public class RequestRepository : IRequestRepository
             .GroupBy(r => r.Priority)
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Key, x => x.Count, cancellationToken);
+
+    // Covered by the (RequestId, ChangedAt) index.
+    public async Task<IReadOnlyList<RequestStatusHistory>> GetHistoryAsync(
+        int requestId,
+        CancellationToken cancellationToken) =>
+        await _context.RequestStatusHistory
+            .AsNoTracking()
+            .Where(h => h.RequestId == requestId)
+            .OrderByDescending(h => h.ChangedAt)
+            .ThenByDescending(h => h.Id)
+            .ToListAsync(cancellationToken);
+
+    // ---------- Write operations ----------
+
+    // Tracked: EF records the changes made to this entity and saves them later.
+    public Task<Request?> GetForUpdateAsync(int id, CancellationToken cancellationToken) =>
+        _context.Requests.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+    // The UPDATE will include "WHERE RowVersion = @expected".
+    // If another user changed the row in the meantime, no row matches and EF reports a conflict.
+    public void SetExpectedRowVersion(Request request, byte[] expectedRowVersion) =>
+        _context.Entry(request).Property(r => r.RowVersion).OriginalValue = expectedRowVersion;
+
+    public void AddHistory(RequestStatusHistory history) =>
+        _context.RequestStatusHistory.Add(history);
+
+    // SaveChanges runs the UPDATE and the audit INSERT in one transaction.
+    // Returns false on a concurrency conflict; in that case nothing was saved.
+    public async Task<bool> TrySaveChangesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Discard the pending changes so they are not retried by a later save.
+            _context.ChangeTracker.Clear();
+            return false;
+        }
+    }
+
+    // ---------- Query helpers ----------
 
     private static IQueryable<Request> ApplyFilters(IQueryable<Request> query, RequestFilter filter)
     {

@@ -55,22 +55,37 @@ public class GlobalExceptionHandler : IExceptionHandler
                 exception.GetType().Name, httpContext.Request.Method, httpContext.Request.Path, exception.Message);
         }
 
+        var problemDetails = new ProblemDetails
+        {
+            Status = statusCode,
+            Title = title,
+            // Our own exceptions carry safe, user-facing messages.
+            // Unexpected errors get a generic message only.
+            Detail = statusCode == StatusCodes.Status500InternalServerError
+                ? "Please try again later."
+                : exception.Message
+        };
+
         httpContext.Response.StatusCode = statusCode;
 
-        return await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
+        var written = await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
         {
             HttpContext = httpContext,
             Exception = exception,
-            ProblemDetails = new ProblemDetails
-            {
-                Status = statusCode,
-                Title = title,
-                // Our own exceptions carry safe, user-facing messages.
-                // Unexpected errors get a generic message only.
-                Detail = statusCode == StatusCodes.Status500InternalServerError
-                    ? "Please try again later."
-                    : exception.Message
-            }
+            ProblemDetails = problemDetails
         });
+
+        // The service declines when the client did not ask for JSON (e.g. Accept: text/plain).
+        // The error must still reach the client, so it is written as problem+json directly.
+        if (!written)
+        {
+            await httpContext.Response.WriteAsJsonAsync(
+                problemDetails,
+                options: null,
+                contentType: "application/problem+json",
+                cancellationToken: cancellationToken);
+        }
+
+        return true;
     }
 }

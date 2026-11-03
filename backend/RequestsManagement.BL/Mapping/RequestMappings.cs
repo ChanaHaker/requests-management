@@ -16,4 +16,13 @@ public static class RequestMappings
             request.CreatedAt,
             request.UpdatedAt,
             Convert.ToBase64String(request.RowVersion));
+
+    public static RequestStatusHistoryDto ToDto(this RequestStatusHistory history) =>
+        new(
+            history.Id,
+            history.RequestId,
+            history.PreviousStatus,
+            history.NewStatus,
+            history.ChangedAt,
+            history.ChangedBy);
 }
