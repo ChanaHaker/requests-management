@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using RequestsManagement.Api.Middleware;
+using RequestsManagement.BL.Caching;
 using RequestsManagement.BL.Services;
 using RequestsManagement.DAL;
 using RequestsManagement.DAL.Repositories;
@@ -8,7 +9,7 @@ using RequestsManagement.DAL.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Data access layer
+// Data access layer (Scoped: one DbContext per request)
 builder.Services.AddDbContext<RequestsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("RequestsDb")));
 builder.Services.AddScoped<IRequestRepository, RequestRepository>();
@@ -16,6 +17,10 @@ builder.Services.AddScoped<RequestsSeeder>();
 
 // Business logic layer
 builder.Services.AddScoped<IRequestService, RequestService>();
+
+// Cache (Singleton: one shared cache for all requests; depends only on singletons)
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IRequestStatisticsCache, MemoryRequestStatisticsCache>();
 
 // API layer
 builder.Services.AddControllers()

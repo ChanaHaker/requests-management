@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using RequestsManagement.BL.Caching;
 using RequestsManagement.BL.Dtos;
 using RequestsManagement.BL.Exceptions;
 using RequestsManagement.BL.Mapping;
@@ -16,11 +17,16 @@ namespace RequestsManagement.BL.Services;
 public class RequestService : IRequestService
 {
     private readonly IRequestRepository _repository;
+    private readonly IRequestStatisticsCache _statisticsCache;
     private readonly ILogger<RequestService> _logger;
 
-    public RequestService(IRequestRepository repository, ILogger<RequestService> logger)
+    public RequestService(
+        IRequestRepository repository,
+        IRequestStatisticsCache statisticsCache,
+        ILogger<RequestService> logger)
     {
         _repository = repository;
+        _statisticsCache = statisticsCache;
         _logger = logger;
     }
 
@@ -51,20 +57,9 @@ public class RequestService : IRequestService
         return request.ToDto();
     }
 
-    public async Task<RequestStatisticsDto> GetStatisticsAsync(CancellationToken cancellationToken)
-    {
-        var statusCounts = await _repository.CountByStatusAsync(cancellationToken);
-        var priorityCounts = await _repository.CountByPriorityAsync(cancellationToken);
-
-        // Include every value, with 0 when no request has it.
-        var byStatus = Enum.GetValues<RequestStatus>()
-            .ToDictionary(s => s, s => statusCounts.GetValueOrDefault(s));
-
-        var byPriority = Enum.GetValues<RequestPriority>()
-            .ToDictionary(p => p, p => priorityCounts.GetValueOrDefault(p));
-
-        return new RequestStatisticsDto(byStatus.Values.Sum(), byStatus, byPriority);
-    }
+    // Served from cache; recalculated only after expiration or a status change.
+    public Task<RequestStatisticsDto> GetStatisticsAsync(CancellationToken cancellationToken) =>
+        _statisticsCache.GetOrCreateAsync(CalculateStatisticsAsync, cancellationToken);
 
     public async Task<IReadOnlyList<RequestStatusHistoryDto>> GetHistoryAsync(
         int id,
@@ -197,6 +192,9 @@ public class RequestService : IRequestService
             return StatusChangeResult.Failed(StatusChangeOutcome.Conflict, ConflictMessage(id));
         }
 
+        // The status counts changed, so the cached statistics are no longer valid.
+        _statisticsCache.Invalidate();
+
         _logger.LogInformation(
             "Request {RequestId} status changed from {PreviousStatus} to {NewStatus}.",
             id, previousStatus, newStatus);
@@ -206,6 +204,21 @@ public class RequestService : IRequestService
     }
 
     // ---------- Helpers ----------
+
+    private async Task<RequestStatisticsDto> CalculateStatisticsAsync(CancellationToken cancellationToken)
+    {
+        var statusCounts = await _repository.CountByStatusAsync(cancellationToken);
+        var priorityCounts = await _repository.CountByPriorityAsync(cancellationToken);
+
+        // Include every value, with 0 when no request has it.
+        var byStatus = Enum.GetValues<RequestStatus>()
+            .ToDictionary(s => s, s => statusCounts.GetValueOrDefault(s));
+
+        var byPriority = Enum.GetValues<RequestPriority>()
+            .ToDictionary(p => p, p => priorityCounts.GetValueOrDefault(p));
+
+        return new RequestStatisticsDto(byStatus.Values.Sum(), byStatus, byPriority);
+    }
 
     private static string ConflictMessage(int id) =>
         $"Request {id} was modified by another user. Reload it and try again.";
