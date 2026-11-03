@@ -12,11 +12,16 @@ public interface IRequestService
 
     Task<RequestStatisticsDto> GetStatisticsAsync(CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<RequestStatusHistoryDto>> GetHistoryAsync(int id, CancellationToken cancellationToken);
+
     Task<RequestDto> UpdateStatusAsync(
         int id,
         UpdateStatusRequest update,
         string changedBy,
         CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<RequestStatusHistoryDto>> GetHistoryAsync(int id, CancellationToken cancellationToken);
+    Task<BulkUpdateStatusResult> BulkUpdateStatusAsync(
+        BulkUpdateStatusRequest bulk,
+        string changedBy,
+        CancellationToken cancellationToken);
 }

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using RequestsManagement.BL.Validation;
 using RequestsManagement.DAL.Entities;
 
 namespace RequestsManagement.BL.Dtos;
@@ -9,8 +10,6 @@ namespace RequestsManagement.BL.Dtos;
 /// </summary>
 public class UpdateStatusRequest : IValidatableObject
 {
-    private const int RowVersionLength = 8;
-
     [Required]
     public RequestStatus? NewStatus { get; set; }
 
@@ -24,16 +23,9 @@ public class UpdateStatusRequest : IValidatableObject
             yield return new ValidationResult("NewStatus is not a valid value.", new[] { nameof(NewStatus) });
         }
 
-        if (!string.IsNullOrWhiteSpace(RowVersion) && !IsValidRowVersion(RowVersion))
+        if (!string.IsNullOrWhiteSpace(RowVersion) && !RowVersionFormat.IsValid(RowVersion))
         {
             yield return new ValidationResult("RowVersion is not in a valid format.", new[] { nameof(RowVersion) });
         }
-    }
-
-    private static bool IsValidRowVersion(string value)
-    {
-        var buffer = new byte[RowVersionLength];
-        return Convert.TryFromBase64String(value, buffer, out var bytesWritten)
-            && bytesWritten == RowVersionLength;
     }
 }

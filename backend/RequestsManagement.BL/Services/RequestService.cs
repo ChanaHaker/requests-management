@@ -87,30 +87,89 @@ public class RequestService : IRequestService
         string changedBy,
         CancellationToken cancellationToken)
     {
+        var expectedRowVersion = Convert.FromBase64String(update.RowVersion);
+
+        var result = await TryChangeStatusAsync(
+            id, update.NewStatus!.Value, expectedRowVersion, changedBy, cancellationToken);
+
+        // A single update reports failures as exceptions, mapped to HTTP codes in one place.
+        return result.Outcome switch
+        {
+            StatusChangeOutcome.Updated => result.Request!.ToDto(),
+            StatusChangeOutcome.NotFound => throw new NotFoundException(result.Message!),
+            StatusChangeOutcome.Conflict => throw new ConflictException(result.Message!),
+            _ => throw new BusinessRuleException(result.Message!)
+        };
+    }
+
+    public async Task<BulkUpdateStatusResult> BulkUpdateStatusAsync(
+        BulkUpdateStatusRequest bulk,
+        string changedBy,
+        CancellationToken cancellationToken)
+    {
+        var newStatus = bulk.NewStatus!.Value;
+        var results = new List<BulkUpdateItemResult>(bulk.Items.Count);
+
+        // Partial success: each item is loaded, checked and saved in its own transaction,
+        // so a missing or conflicting request does not block the others.
+        foreach (var item in bulk.Items)
+        {
+            var expectedRowVersion = Convert.FromBase64String(item.RowVersion);
+
+            var result = await TryChangeStatusAsync(
+                item.Id, newStatus, expectedRowVersion, changedBy, cancellationToken);
+
+            var newRowVersion = result.Outcome == StatusChangeOutcome.Updated
+                ? Convert.ToBase64String(result.Request!.RowVersion)
+                : null;
+
+            results.Add(new BulkUpdateItemResult(item.Id, result.Outcome, result.Message, newRowVersion));
+        }
+
+        var updatedCount = results.Count(r => r.Outcome == StatusChangeOutcome.Updated);
+
+        _logger.LogInformation(
+            "Bulk status update to {NewStatus}: {Updated} of {Requested} requests updated.",
+            newStatus, updatedCount, results.Count);
+
+        return new BulkUpdateStatusResult(results.Count, updatedCount, results.Count - updatedCount, results);
+    }
+
+    /// <summary>
+    /// The status change logic shared by the single and bulk updates.
+    /// Returns an outcome instead of throwing, so the bulk update can continue with the next item.
+    /// </summary>
+    private async Task<StatusChangeResult> TryChangeStatusAsync(
+        int id,
+        RequestStatus newStatus,
+        byte[] expectedRowVersion,
+        string changedBy,
+        CancellationToken cancellationToken)
+    {
         // 1. Load the request (tracked, so changes can be saved).
-        var request = await _repository.GetForUpdateAsync(id, cancellationToken)
-            ?? throw new NotFoundException($"Request {id} was not found.");
+        var request = await _repository.GetForUpdateAsync(id, cancellationToken);
+        if (request is null)
+        {
+            return StatusChangeResult.Failed(StatusChangeOutcome.NotFound, $"Request {id} was not found.");
+        }
 
         // 2. Early version check: the client must have seen the current version.
         //    Checked before the business rules, so the user is asked to reload
         //    instead of getting a rule error about a status they never saw.
-        var expectedRowVersion = Convert.FromBase64String(update.RowVersion);
         if (!request.RowVersion.SequenceEqual(expectedRowVersion))
         {
-            throw new ConflictException(
-                $"Request {id} was modified by another user. Reload it and try again.");
+            return StatusChangeResult.Failed(StatusChangeOutcome.Conflict, ConflictMessage(id));
         }
 
         // 3. Business rule: only allowed transitions.
-        var newStatus = update.NewStatus!.Value;
         var previousStatus = request.Status;
-
         if (!StatusTransitions.IsAllowed(previousStatus, newStatus))
         {
             var allowed = StatusTransitions.GetAllowedTargets(previousStatus);
             var allowedText = allowed.Count == 0 ? "none (final status)" : string.Join(", ", allowed);
 
-            throw new BusinessRuleException(
+            return StatusChangeResult.Failed(
+                StatusChangeOutcome.InvalidTransition,
                 $"Cannot change status from {previousStatus} to {newStatus}. Allowed: {allowedText}.");
         }
 
@@ -135,8 +194,7 @@ public class RequestService : IRequestService
 
         if (!await _repository.TrySaveChangesAsync(cancellationToken))
         {
-            throw new ConflictException(
-                $"Request {id} was modified by another user. Reload it and try again.");
+            return StatusChangeResult.Failed(StatusChangeOutcome.Conflict, ConflictMessage(id));
         }
 
         _logger.LogInformation(
@@ -144,10 +202,13 @@ public class RequestService : IRequestService
             id, previousStatus, newStatus);
 
         // 7. The entity now holds the new RowVersion generated by the database.
-        return request.ToDto();
+        return StatusChangeResult.Succeeded(request);
     }
 
     // ---------- Helpers ----------
+
+    private static string ConflictMessage(int id) =>
+        $"Request {id} was modified by another user. Reload it and try again.";
 
     private static RequestFilter ToFilter(RequestQueryParameters parameters) =>
         new(
@@ -167,4 +228,13 @@ public class RequestService : IRequestService
 
     private static string? Normalize(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private sealed record StatusChangeResult(StatusChangeOutcome Outcome, Request? Request, string? Message)
+    {
+        public static StatusChangeResult Succeeded(Request request) =>
+            new(StatusChangeOutcome.Updated, request, null);
+
+        public static StatusChangeResult Failed(StatusChangeOutcome outcome, string message) =>
+            new(outcome, null, message);
+    }
 }

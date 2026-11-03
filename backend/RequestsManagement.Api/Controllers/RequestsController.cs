@@ -77,6 +77,23 @@ public class RequestsController : ControllerBase
     }
 
     /// <summary>
+    /// Changes the status of up to 100 requests. Partial success: each request is processed
+    /// independently and the response reports the outcome of every item
+    /// (Updated, NotFound, Conflict or InvalidTransition). Returns 400 only if the request body itself is invalid.
+    /// </summary>
+    [HttpPatch("status")]
+    [ProducesResponseType(typeof(BulkUpdateStatusResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<BulkUpdateStatusResult>> BulkUpdateStatus(
+        [FromBody] BulkUpdateStatusRequest bulk,
+        [FromHeader(Name = UserNameHeader), Required, StringLength(100)] string changedBy,
+        CancellationToken cancellationToken)
+    {
+        var result = await _requestService.BulkUpdateStatusAsync(bulk, changedBy, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Returns the status change history of a request, newest first.
     /// </summary>
     [HttpGet("{id:int}/history")]
