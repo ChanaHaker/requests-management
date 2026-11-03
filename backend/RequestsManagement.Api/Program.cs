@@ -68,3 +68,8 @@ static async Task SeedDatabaseAsync(WebApplication app, string[] args)
 
     await seeder.SeedAsync(count, reset);
 }
+
+// Makes the auto-generated Program class visible to the integration tests (WebApplicationFactory<Program>).
+public partial class Program
+{
+}
