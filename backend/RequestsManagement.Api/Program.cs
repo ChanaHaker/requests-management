@@ -1,21 +1,39 @@
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using RequestsManagement.Api.Middleware;
+using RequestsManagement.BL.Services;
 using RequestsManagement.DAL;
+using RequestsManagement.DAL.Repositories;
 using RequestsManagement.DAL.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Data access layer
 builder.Services.AddDbContext<RequestsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("RequestsDb")));
-
+builder.Services.AddScoped<IRequestRepository, RequestRepository>();
 builder.Services.AddScoped<RequestsSeeder>();
 
-builder.Services.AddControllers();
+// Business logic layer
+builder.Services.AddScoped<IRequestService, RequestService>();
+
+// API layer
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Global error handling: exceptions become Problem Details responses
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
 
 await SeedDatabaseAsync(app, args);
+
+// Must be first, so it catches exceptions from everything after it.
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
