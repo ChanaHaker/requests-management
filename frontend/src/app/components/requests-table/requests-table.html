@@ -1,0 +1,51 @@
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th><button type="button" (click)="sortChange.emit('Title')">כותרת {{ sortIndicator('Title') }}</button></th>
+        <th><button type="button" (click)="sortChange.emit('OrganizationName')">ארגון {{ sortIndicator('OrganizationName') }}</button></th>
+        <th><button type="button" (click)="sortChange.emit('Status')">סטטוס {{ sortIndicator('Status') }}</button></th>
+        <th><button type="button" (click)="sortChange.emit('Priority')">עדיפות {{ sortIndicator('Priority') }}</button></th>
+        <th>מטפל</th>
+        <th><button type="button" (click)="sortChange.emit('CreatedAt')">נוצרה {{ sortIndicator('CreatedAt') }}</button></th>
+        <th><button type="button" (click)="sortChange.emit('UpdatedAt')">עודכנה {{ sortIndicator('UpdatedAt') }}</button></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of result().items; track item.id) {
+        <tr [class.selected]="item.id === selectedId()" (click)="selectRequest.emit(item)">
+          <td>{{ item.id }}</td>
+          <td>{{ item.title }}</td>
+          <td>{{ item.organizationName }}</td>
+          <td><span class="badge" [class]="'badge status-' + item.status">{{ statusLabels[item.status] }}</span></td>
+          <td><span [class]="'priority-' + item.priority">{{ priorityLabels[item.priority] }}</span></td>
+          <td>{{ item.assignedTo ?? '—' }}</td>
+          <td>{{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ item.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="pager">
+  <span>נמצאו {{ result().totalCount | number }} פניות</span>
+
+  <div class="pager-controls">
+    <button type="button" [disabled]="result().page <= 1" (click)="pageChange.emit(1)">ראשון</button>
+    <button type="button" [disabled]="result().page <= 1" (click)="pageChange.emit(result().page - 1)">הקודם</button>
+    <span>עמוד {{ result().page | number }} מתוך {{ result().totalPages | number }}</span>
+    <button type="button" [disabled]="result().page >= result().totalPages" (click)="pageChange.emit(result().page + 1)">הבא</button>
+    <button type="button" [disabled]="result().page >= result().totalPages" (click)="pageChange.emit(result().totalPages)">אחרון</button>
+  </div>
+
+  <label>
+    בעמוד:
+    <select (change)="onPageSizeSelected($event)">
+      @for (size of pageSizes; track size) {
+        <option [value]="size" [selected]="size === result().pageSize">{{ size }}</option>
+      }
+    </select>
+  </label>
+</div>

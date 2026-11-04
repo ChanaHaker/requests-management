@@ -1,0 +1,58 @@
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #1f4e79;
+}
+
+.results {
+  position: relative;
+  min-height: 120px;
+}
+
+.state {
+  padding: 24px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+}
+
+.state.error {
+  border-color: #e6b0aa;
+  background: #fdf2f1;
+  color: #922b21;
+}
+
+.state.error button {
+  padding: 6px 14px;
+  border: 1px solid #922b21;
+  border-radius: 6px;
+  background: #fff;
+  color: #922b21;
+  cursor: pointer;
+}
+
+.state.empty {
+  color: #6b7785;
+}
+
+.loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(244, 246, 249, 0.7);
+  font-weight: 600;
+  color: #1f4e79;
+  border-radius: 8px;
+}

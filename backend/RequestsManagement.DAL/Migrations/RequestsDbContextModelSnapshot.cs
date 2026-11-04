@@ -70,6 +70,10 @@ namespace RequestsManagement.DAL.Migrations
 
                     b.HasIndex("OrganizationName");
 
+                    b.HasIndex("Title");
+
+                    b.HasIndex("UpdatedAt");
+
                     b.HasIndex("Priority", "CreatedAt");
 
                     b.HasIndex("Status", "CreatedAt");

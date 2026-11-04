@@ -1,0 +1,55 @@
+.statistics {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card {
+  flex: 1 1 120px;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+}
+
+.card.small {
+  flex-basis: 100px;
+  padding: 6px 12px;
+}
+
+.card.total {
+  background: #1f4e79;
+  color: #fff;
+  border-color: #1f4e79;
+}
+
+.label {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.value {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.card.small .value {
+  font-size: 16px;
+}
+
+.status-New { border-top: 4px solid #2e86de; }
+.status-InProgress { border-top: 4px solid #f39c12; }
+.status-Waiting { border-top: 4px solid #8e44ad; }
+.status-Completed { border-top: 4px solid #27ae60; }
+
+.muted {
+  color: #6b7785;
+}

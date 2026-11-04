@@ -26,13 +26,17 @@ public class RequestConfiguration : IEntityTypeConfiguration<Request>
         builder.Property(r => r.RowVersion)
             .IsRowVersion();
 
-        // Filter by status, sorted by date. Also covers "count by status" aggregation.
+        // Every non-clustered index also carries the clustered key (Id),
+        // so each index below is effectively (column(s), Id) - matching the sort order
+        // used by the repository (sort field, then Id). No sort operation is needed.
+
+        // Filter by status, sorted by date. Also covers "count by status" and sort by status.
         builder.HasIndex(r => new { r.Status, r.CreatedAt });
 
-        // Filter by priority, sorted by date. Also covers "count by priority" aggregation.
+        // Filter by priority, sorted by date. Also covers "count by priority" and sort by priority.
         builder.HasIndex(r => new { r.Priority, r.CreatedAt });
 
-        // Exact filter by organization.
+        // Exact filter by organization, and sort by organization.
         builder.HasIndex(r => r.OrganizationName);
 
         // Exact filter by assignee.
@@ -40,5 +44,12 @@ public class RequestConfiguration : IEntityTypeConfiguration<Request>
 
         // Date-range filter and the default sort (newest first).
         builder.HasIndex(r => r.CreatedAt);
+
+        // Sort by last update.
+        builder.HasIndex(r => r.UpdatedAt);
+
+        // Sort by title. Without it, sorting 100,000 rows by text needed a large memory grant
+        // and timed out on LocalDB. (It does not help LIKE '%term%' search.)
+        builder.HasIndex(r => r.Title);
     }
 }

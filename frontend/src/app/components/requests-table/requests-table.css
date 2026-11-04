@@ -1,0 +1,89 @@
+.table-wrapper {
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th, td {
+  padding: 8px 10px;
+  text-align: right;
+  border-bottom: 1px solid #eef1f5;
+  white-space: nowrap;
+}
+
+th {
+  background: #f0f3f7;
+}
+
+th button {
+  background: none;
+  border: none;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+tbody tr {
+  cursor: pointer;
+}
+
+tbody tr:hover {
+  background: #f7f9fc;
+}
+
+tbody tr.selected {
+  background: #e3eefb;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #fff;
+}
+
+.status-New { background: #2e86de; }
+.status-InProgress { background: #f39c12; }
+.status-Waiting { background: #8e44ad; }
+.status-Completed { background: #27ae60; }
+
+.priority-High { color: #c0392b; font-weight: 600; }
+.priority-Medium { color: #d68910; }
+.priority-Low { color: #6b7785; }
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.pager-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pager button, .pager select {
+  padding: 4px 10px;
+  border: 1px solid #c8d0da;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.pager button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

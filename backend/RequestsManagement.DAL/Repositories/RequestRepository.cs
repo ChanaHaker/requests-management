@@ -152,18 +152,20 @@ public class RequestRepository : IRequestRepository
     {
         var descending = filter.SortDirection == SortDirection.Desc;
 
-        var ordered = filter.SortBy switch
+        // Each sort matches an index exactly (including Id at the end),
+        // so SQL Server reads the index in order instead of sorting 100,000 rows.
+        IOrderedQueryable<Request> ordered = filter.SortBy switch
         {
             RequestSortField.UpdatedAt => OrderByDirection(query, r => r.UpdatedAt, descending),
-            RequestSortField.Priority => OrderByDirection(query, r => r.Priority, descending),
-            RequestSortField.Status => OrderByDirection(query, r => r.Status, descending),
             RequestSortField.Title => OrderByDirection(query, r => r.Title, descending),
             RequestSortField.OrganizationName => OrderByDirection(query, r => r.OrganizationName, descending),
+            RequestSortField.Status => ThenByDirection(OrderByDirection(query, r => r.Status, descending), r => r.CreatedAt, descending),
+            RequestSortField.Priority => ThenByDirection(OrderByDirection(query, r => r.Priority, descending), r => r.CreatedAt, descending),
             _ => OrderByDirection(query, r => r.CreatedAt, descending)
         };
 
         // Tie-breaker by Id: rows with equal sort values keep a stable order between pages.
-        return descending ? ordered.ThenByDescending(r => r.Id) : ordered.ThenBy(r => r.Id);
+        return ThenByDirection(ordered, r => r.Id, descending);
     }
 
     private static IOrderedQueryable<Request> OrderByDirection<TKey>(
@@ -171,4 +173,10 @@ public class RequestRepository : IRequestRepository
         Expression<Func<Request, TKey>> keySelector,
         bool descending) =>
         descending ? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
+
+    private static IOrderedQueryable<Request> ThenByDirection<TKey>(
+        IOrderedQueryable<Request> query,
+        Expression<Func<Request, TKey>> keySelector,
+        bool descending) =>
+        descending ? query.ThenByDescending(keySelector) : query.ThenBy(keySelector);
 }

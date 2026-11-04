@@ -1,0 +1,28 @@
+@if (statistics(); as stats) {
+  <section class="statistics">
+    <div class="group">
+      <div class="card total">
+        <span class="label">סה"כ פניות</span>
+        <span class="value">{{ stats.totalCount | number }}</span>
+      </div>
+
+      @for (status of statuses; track status) {
+        <div class="card" [class]="'status-' + status">
+          <span class="label">{{ statusLabels[status] }}</span>
+          <span class="value">{{ stats.byStatus[status] | number }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="group">
+      @for (priority of priorities; track priority) {
+        <div class="card small">
+          <span class="label">עדיפות {{ priorityLabels[priority] }}</span>
+          <span class="value">{{ stats.byPriority[priority] | number }}</span>
+        </div>
+      }
+    </div>
+  </section>
+} @else {
+  <p class="muted">טוען סיכומים...</p>
+}
