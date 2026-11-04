@@ -1,1 +1,48 @@
-<p>request-filters works!</p>
+<form #form class="filters" (submit)="$event.preventDefault()">
+  <label class="wide">
+    חיפוש (כותרת או ארגון)
+    <input type="search" placeholder="לדוגמה: פסולת" (input)="update('search', $event)" />
+  </label>
+
+  <label>
+    סטטוס
+    <select (change)="update('status', $event)">
+      <option value="">הכול</option>
+      @for (status of statuses; track status) {
+        <option [value]="status">{{ statusLabels[status] }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    עדיפות
+    <select (change)="update('priority', $event)">
+      <option value="">הכול</option>
+      @for (priority of priorities; track priority) {
+        <option [value]="priority">{{ priorityLabels[priority] }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    ארגון (שם מלא)
+    <input type="text" placeholder="לדוגמה: מוסך ברוש" (input)="update('organizationName', $event)" />
+  </label>
+
+  <label>
+    מטפל
+    <input type="text" placeholder="לדוגמה: david.levi" (input)="update('assignedTo', $event)" />
+  </label>
+
+  <label>
+    מתאריך
+    <input type="date" (change)="update('createdFrom', $event)" />
+  </label>
+
+  <label>
+    עד תאריך
+    <input type="date" (change)="update('createdTo', $event)" />
+  </label>
+
+  <button type="button" class="clear" (click)="clear(form)">ניקוי</button>
+</form>

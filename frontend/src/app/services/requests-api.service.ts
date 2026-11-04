@@ -45,6 +45,10 @@ export class RequestsApiService {
     return this.http.get<PagedResult<RequestItem>>(this.baseUrl, { params });
   }
 
+  getById(id: number): Observable<RequestItem> {
+    return this.http.get<RequestItem>(`${this.baseUrl}/${id}`);
+  }
+
   getStatistics(): Observable<RequestStatistics> {
     return this.http.get<RequestStatistics>(`${this.baseUrl}/statistics`);
   }

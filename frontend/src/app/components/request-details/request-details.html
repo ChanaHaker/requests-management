@@ -1,1 +1,84 @@
-<p>request-details works!</p>
+<section class="details">
+  <header class="details-header">
+    <h2>פנייה #{{ request().id }}</h2>
+    <button type="button" class="close" (click)="close.emit()" aria-label="סגירה">✕</button>
+  </header>
+
+  <dl class="fields">
+    <div><dt>כותרת</dt><dd>{{ request().title }}</dd></div>
+    <div><dt>ארגון</dt><dd>{{ request().organizationName }}</dd></div>
+    <div><dt>סטטוס</dt><dd><span [class]="'badge status-' + request().status">{{ statusLabels[request().status] }}</span></dd></div>
+    <div><dt>עדיפות</dt><dd>{{ priorityLabels[request().priority] }}</dd></div>
+    <div><dt>מטפל</dt><dd>{{ request().assignedTo ?? '—' }}</dd></div>
+    <div><dt>נוצרה</dt><dd>{{ request().createdAt | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+    <div><dt>עודכנה</dt><dd>{{ request().updatedAt | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+  </dl>
+
+  @if (message(); as msg) {
+    <div [class]="'message ' + msg.kind">{{ msg.text }}</div>
+  }
+
+  <div class="block">
+    <h3>עדכון סטטוס</h3>
+
+    @if (allowedTargets().length === 0) {
+      <p class="muted">הפנייה הסתיימה. זהו סטטוס סופי, ולא ניתן לשנות אותו.</p>
+    } @else {
+      <div class="update-form">
+        <label>
+          סטטוס חדש
+          <select (change)="onStatusSelected($event)">
+            <option value="" [selected]="newStatus() === ''">בחרו...</option>
+            @for (status of allowedTargets(); track status) {
+              <option [value]="status" [selected]="newStatus() === status">{{ statusLabels[status] }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          שם משתמש (באנגלית)
+          <input type="text" [value]="userName()" (input)="onUserNameInput($event)" />
+        </label>
+
+        <button type="button" class="primary" [disabled]="!canSubmit()" (click)="submit()">
+          {{ saving() ? 'שומר...' : 'עדכון' }}
+        </button>
+      </div>
+
+      @if (!userNameValid()) {
+        <p class="hint">יש להזין שם משתמש באותיות לועזיות, ספרות, נקודה, מקף או קו תחתון.</p>
+      }
+    }
+  </div>
+
+  <div class="block">
+    <h3>היסטוריית שינויים</h3>
+
+    @if (historyLoading()) {
+      <p class="muted">טוען היסטוריה...</p>
+    } @else if (history().length === 0) {
+      <p class="muted">אין עדיין שינויי סטטוס לפנייה זו.</p>
+    } @else {
+      <table class="history">
+        <thead>
+          <tr>
+            <th>מתי</th>
+            <th>מי</th>
+            <th>מסטטוס</th>
+            <th>לסטטוס</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of history(); track entry.id) {
+            <tr>
+              <td>{{ entry.changedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+              <td>{{ entry.changedBy }}</td>
+              <td>{{ statusLabels[entry.previousStatus] }}</td>
+              <td>{{ statusLabels[entry.newStatus] }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</section>

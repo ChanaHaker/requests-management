@@ -1,0 +1,147 @@
+.details {
+  padding: 14px 16px;
+  background: #fff;
+  border: 2px solid #1f4e79;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.details-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #1f4e79;
+}
+
+.close {
+  border: none;
+  background: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.fields dt {
+  font-size: 12px;
+  color: #6b7785;
+}
+
+.fields dd {
+  margin: 0;
+  font-size: 14px;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #fff;
+}
+
+.status-New { background: #2e86de; }
+.status-InProgress { background: #f39c12; }
+.status-Waiting { background: #8e44ad; }
+.status-Completed { background: #27ae60; }
+
+.message {
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.message.success {
+  background: #eafaf1;
+  border: 1px solid #a9dfbf;
+  color: #1e8449;
+}
+
+.message.error {
+  background: #fdf2f1;
+  border: 1px solid #e6b0aa;
+  color: #922b21;
+}
+
+.block h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.update-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.update-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #4a5663;
+}
+
+.update-form select,
+.update-form input {
+  padding: 6px 8px;
+  border: 1px solid #c8d0da;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+}
+
+.primary {
+  padding: 7px 18px;
+  border: none;
+  border-radius: 6px;
+  background: #1f4e79;
+  color: #fff;
+  cursor: pointer;
+}
+
+.primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #922b21;
+}
+
+.muted {
+  margin: 0;
+  color: #6b7785;
+  font-size: 14px;
+}
+
+.history {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.history th,
+.history td {
+  padding: 6px 8px;
+  text-align: right;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.history th {
+  background: #f0f3f7;
+}

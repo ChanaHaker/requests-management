@@ -1,0 +1,39 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #4a5663;
+  flex: 1 1 140px;
+}
+
+label.wide {
+  flex: 2 1 240px;
+}
+
+input, select {
+  padding: 6px 8px;
+  border: 1px solid #c8d0da;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+}
+
+.clear {
+  padding: 7px 16px;
+  border: 1px solid #c8d0da;
+  border-radius: 6px;
+  background: #f0f3f7;
+  cursor: pointer;
+}

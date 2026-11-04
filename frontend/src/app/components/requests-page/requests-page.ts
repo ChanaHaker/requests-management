@@ -1,5 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RequestsStateService } from '../../services/requests-state.service';
+import { RequestDetails } from '../request-details/request-details';
+import { RequestFilters } from '../request-filters/request-filters';
 import { RequestStatistics } from '../request-statistics/request-statistics';
 import { RequestsTable } from '../requests-table/requests-table';
 
@@ -9,7 +11,7 @@ import { RequestsTable } from '../requests-table/requests-table';
  */
 @Component({
   selector: 'app-requests-page',
-  imports: [RequestStatistics, RequestsTable],
+  imports: [RequestDetails, RequestFilters, RequestStatistics, RequestsTable],
   templateUrl: './requests-page.html',
   styleUrl: './requests-page.css'
 })

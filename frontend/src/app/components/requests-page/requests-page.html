@@ -5,6 +5,19 @@
 
   <app-request-statistics [statistics]="state.statistics()" />
 
+  <app-request-filters (filtersChange)="state.setFilters($event)" />
+
+  @if (state.selected(); as selected) {
+    <app-request-details
+      [request]="selected"
+      [history]="state.history()"
+      [historyLoading]="state.historyLoading()"
+      [saving]="state.saving()"
+      [message]="state.message()"
+      (changeStatus)="state.updateStatus($event.newStatus, $event.userName)"
+      (close)="state.clearSelection()" />
+  }
+
   <section class="results">
     @if (state.error(); as message) {
       <div class="state error">
