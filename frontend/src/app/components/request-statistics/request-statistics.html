@@ -1,5 +1,12 @@
+@if (error(); as message) {
+  <div class="error">
+    <span>לא ניתן לטעון את הנתונים המסכמים. {{ message }}</span>
+    <button type="button" (click)="retry.emit()">נסו שוב</button>
+  </div>
+}
+
 @if (statistics(); as stats) {
-  <section class="statistics">
+  <section class="statistics" [class.refreshing]="loading()">
     <div class="group">
       <div class="card total">
         <span class="label">סה"כ פניות</span>
@@ -7,7 +14,7 @@
       </div>
 
       @for (status of statuses; track status) {
-        <div class="card" [class]="'status-' + status">
+        <div class="card" [class]="'card status-' + status">
           <span class="label">{{ statusLabels[status] }}</span>
           <span class="value">{{ stats.byStatus[status] | number }}</span>
         </div>
@@ -23,6 +30,6 @@
       }
     </div>
   </section>
-} @else {
+} @else if (loading()) {
   <p class="muted">טוען סיכומים...</p>
 }

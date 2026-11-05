@@ -1,0 +1,60 @@
+@if (checkedCount() > 0) {
+  <div class="bar">
+    <strong>נבחרו {{ checkedCount() }} פניות</strong>
+
+    <label>
+      סטטוס חדש
+      <select (change)="onStatusSelected($event)">
+        <option value="" [selected]="newStatus() === ''">בחרו...</option>
+        @for (status of statuses; track status) {
+          <option [value]="status" [selected]="newStatus() === status">{{ statusLabels[status] }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      שם משתמש (באנגלית)
+      <input type="text" [value]="userName()" (input)="onUserNameInput($event)" />
+    </label>
+
+    <button type="button" class="primary" [disabled]="!canApply()" (click)="submit()">
+      {{ saving() ? 'מעדכן...' : 'עדכון הנבחרות' }}
+    </button>
+    <button type="button" class="secondary" (click)="clear.emit()">ביטול בחירה</button>
+  </div>
+
+  @if (!userNameValid()) {
+    <p class="hint">יש להזין שם משתמש באותיות לועזיות, ספרות, נקודה, מקף או קו תחתון.</p>
+  }
+}
+
+@if (error(); as message) {
+  <div class="message error">{{ message }}</div>
+}
+
+@if (result(); as bulk) {
+  <div class="message" [class.success]="bulk.failed === 0" [class.partial]="bulk.failed > 0">
+    <div class="summary">
+      <span>
+        עודכנו {{ bulk.updated }} מתוך {{ bulk.requested }} פניות.
+        @if (bulk.failed > 0) {
+          {{ bulk.failed }} לא עודכנו:
+        }
+      </span>
+      <button type="button" class="close" (click)="clear.emit()" aria-label="סגירה">✕</button>
+    </div>
+
+    @if (failures().length > 0) {
+      <ul>
+        @for (failure of failures(); track failure.id) {
+          <li>
+            <strong>#{{ failure.id }}</strong>: {{ outcomeLabels[failure.outcome] }}
+            @if (failure.message) {
+              <span class="detail">({{ failure.message }})</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+}

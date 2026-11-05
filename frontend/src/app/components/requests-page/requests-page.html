@@ -3,7 +3,11 @@
     <h1>ניהול פניות</h1>
   </header>
 
-  <app-request-statistics [statistics]="state.statistics()" />
+  <app-request-statistics
+    [statistics]="state.statistics()"
+    [loading]="state.statisticsLoading()"
+    [error]="state.statisticsError()"
+    (retry)="state.loadStatistics()" />
 
   <app-request-filters (filtersChange)="state.setFilters($event)" />
 
@@ -16,6 +20,16 @@
       [message]="state.message()"
       (changeStatus)="state.updateStatus($event.newStatus, $event.userName)"
       (close)="state.clearSelection()" />
+  }
+
+  @if (state.checkedCount() > 0 || state.bulkResult() || state.bulkError()) {
+    <app-bulk-actions
+      [checkedCount]="state.checkedCount()"
+      [saving]="state.bulkSaving()"
+      [result]="state.bulkResult()"
+      [error]="state.bulkError()"
+      (apply)="state.bulkUpdateStatus($event.newStatus, $event.userName)"
+      (clear)="state.clearBulk()" />
   }
 
   <section class="results">
@@ -33,10 +47,13 @@
           [sortBy]="state.query().sortBy"
           [sortDirection]="state.query().sortDirection"
           [selectedId]="state.selectedId()"
+          [checkedIds]="state.checkedIds()"
           (sortChange)="state.setSort($event)"
           (pageChange)="state.setPage($event)"
           (pageSizeChange)="state.setPageSize($event)"
-          (selectRequest)="state.select($event)" />
+          (selectRequest)="state.select($event)"
+          (toggleChecked)="state.toggleChecked($event)"
+          (toggleAll)="state.toggleAllOnPage()" />
       }
     }
 

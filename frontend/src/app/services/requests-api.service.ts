@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { BulkUpdateItem, BulkUpdateResult } from '../models/bulk-update.model';
 import { PagedResult } from '../models/paged-result.model';
 import { RequestHistoryEntry } from '../models/request-history-entry.model';
 import { RequestItem } from '../models/request-item.model';
@@ -62,6 +63,15 @@ export class RequestsApiService {
     return this.http.patch<RequestItem>(
       `${this.baseUrl}/${id}/status`,
       { newStatus, rowVersion },
+      { headers: { 'X-User-Name': userName } }
+    );
+  }
+
+  // Partial success: the response reports the outcome of every item.
+  bulkUpdateStatus(newStatus: RequestStatus, items: BulkUpdateItem[], userName: string): Observable<BulkUpdateResult> {
+    return this.http.patch<BulkUpdateResult>(
+      `${this.baseUrl}/status`,
+      { newStatus, items },
       { headers: { 'X-User-Name': userName } }
     );
   }

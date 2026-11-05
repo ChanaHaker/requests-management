@@ -4,6 +4,10 @@
   gap: 8px;
 }
 
+.statistics.refreshing {
+  opacity: 0.6;
+}
+
 .group {
   display: flex;
   flex-wrap: wrap;
@@ -52,4 +56,27 @@
 
 .muted {
   color: #6b7785;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  background: #fdf2f1;
+  border: 1px solid #e6b0aa;
+  border-radius: 6px;
+  color: #922b21;
+  font-size: 14px;
+}
+
+.error button {
+  padding: 4px 12px;
+  border: 1px solid #922b21;
+  border-radius: 6px;
+  background: #fff;
+  color: #922b21;
+  cursor: pointer;
 }

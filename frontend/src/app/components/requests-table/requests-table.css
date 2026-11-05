@@ -31,12 +31,25 @@ th button {
   padding: 0;
 }
 
+th.check, td.check {
+  width: 36px;
+  text-align: center;
+}
+
+td.check input, th.check input {
+  cursor: pointer;
+}
+
 tbody tr {
   cursor: pointer;
 }
 
 tbody tr:hover {
   background: #f7f9fc;
+}
+
+tbody tr.checked {
+  background: #fff8e6;
 }
 
 tbody tr.selected {

@@ -5,9 +5,7 @@ import { RequestItem } from '../../models/request-item.model';
 import { PRIORITY_LABELS } from '../../models/request-priority.model';
 import { ALLOWED_TRANSITIONS, RequestStatus, STATUS_LABELS } from '../../models/request-status.model';
 import { UiMessage } from '../../models/ui-message.model';
-
-// HTTP headers accept only ASCII, so the user name is limited to Latin characters.
-const USER_NAME_PATTERN = /^[A-Za-z0-9._-]{1,100}$/;
+import { DEFAULT_USER_NAME, isValidUserName } from '../../models/user-name.model';
 
 /**
  * Presentational: details of the selected request, status change form and change history.
@@ -33,11 +31,11 @@ export class RequestDetails {
   readonly priorityLabels = PRIORITY_LABELS;
 
   readonly newStatus = signal<RequestStatus | ''>('');
-  readonly userName = signal('chana.haker');
+  readonly userName = signal(DEFAULT_USER_NAME);
 
   // Only transitions allowed from the current status are offered (the server still enforces them).
   readonly allowedTargets = computed(() => ALLOWED_TRANSITIONS[this.request().status]);
-  readonly userNameValid = computed(() => USER_NAME_PATTERN.test(this.userName().trim()));
+  readonly userNameValid = computed(() => isValidUserName(this.userName()));
   readonly canSubmit = computed(() => this.newStatus() !== '' && this.userNameValid() && !this.saving());
 
   constructor() {

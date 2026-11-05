@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Subject, catchError, debounceTime, distinctUntilChanged, of, switchMap, tap } from 'rxjs';
+import { BulkUpdateResult } from '../models/bulk-update.model';
 import { PagedResult } from '../models/paged-result.model';
 import { RequestFilterValues } from '../models/request-filter-values.model';
 import { RequestHistoryEntry } from '../models/request-history-entry.model';
@@ -47,13 +48,22 @@ export class RequestsStateService {
   private readonly pageSignal = signal<PagedResult<RequestItem> | null>(null);
   private readonly loadingSignal = signal(false);
   private readonly errorSignal = signal<string | null>(null);
+
   private readonly statisticsSignal = signal<RequestStatistics | null>(null);
+  private readonly statisticsLoadingSignal = signal(false);
+  private readonly statisticsErrorSignal = signal<string | null>(null);
 
   private readonly selectedSignal = signal<RequestItem | null>(null);
   private readonly historySignal = signal<RequestHistoryEntry[]>([]);
   private readonly historyLoadingSignal = signal(false);
   private readonly savingSignal = signal(false);
   private readonly messageSignal = signal<UiMessage | null>(null);
+
+  // Rows checked for a bulk update (current page only).
+  private readonly checkedIdsSignal = signal<ReadonlySet<number>>(new Set());
+  private readonly bulkSavingSignal = signal(false);
+  private readonly bulkResultSignal = signal<BulkUpdateResult | null>(null);
+  private readonly bulkErrorSignal = signal<string | null>(null);
 
   private readonly filterChanges = new Subject<RequestFilterValues>();
 
@@ -63,12 +73,19 @@ export class RequestsStateService {
   readonly loading = this.loadingSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
   readonly statistics = this.statisticsSignal.asReadonly();
+  readonly statisticsLoading = this.statisticsLoadingSignal.asReadonly();
+  readonly statisticsError = this.statisticsErrorSignal.asReadonly();
   readonly selected = this.selectedSignal.asReadonly();
   readonly selectedId = computed(() => this.selectedSignal()?.id ?? null);
   readonly history = this.historySignal.asReadonly();
   readonly historyLoading = this.historyLoadingSignal.asReadonly();
   readonly saving = this.savingSignal.asReadonly();
   readonly message = this.messageSignal.asReadonly();
+  readonly checkedIds = this.checkedIdsSignal.asReadonly();
+  readonly checkedCount = computed(() => this.checkedIdsSignal().size);
+  readonly bulkSaving = this.bulkSavingSignal.asReadonly();
+  readonly bulkResult = this.bulkResultSignal.asReadonly();
+  readonly bulkError = this.bulkErrorSignal.asReadonly();
 
   constructor() {
     // Filters: debounce typing, ignore unchanged values, then start again from page 1.
@@ -115,6 +132,8 @@ export class RequestsStateService {
         this.loadingSignal.set(false);
         if (result) {
           this.pageSignal.set(result);
+          // A new page has new rows and new RowVersions, so the previous selection is cleared.
+          this.checkedIdsSignal.set(new Set());
         }
       });
 
@@ -124,9 +143,19 @@ export class RequestsStateService {
   // ---------- List ----------
 
   loadStatistics(): void {
+    this.statisticsLoadingSignal.set(true);
+    this.statisticsErrorSignal.set(null);
+
     this.api.getStatistics().subscribe({
-      next: statistics => this.statisticsSignal.set(statistics),
-      error: () => this.statisticsSignal.set(null)
+      next: statistics => {
+        this.statisticsLoadingSignal.set(false);
+        this.statisticsSignal.set(statistics);
+      },
+      error: (error: HttpErrorResponse) => {
+        // The last known counts stay on screen; the error is shown next to them.
+        this.statisticsLoadingSignal.set(false);
+        this.statisticsErrorSignal.set(toErrorMessage(error));
+      }
     });
   }
 
@@ -205,6 +234,70 @@ export class RequestsStateService {
       }
     });
   }
+
+  // ---------- Bulk update ----------
+
+  toggleChecked(id: number): void {
+    const next = new Set(this.checkedIdsSignal());
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    this.checkedIdsSignal.set(next);
+  }
+
+  // Checks every row on the current page, or unchecks them all if they are already checked.
+  toggleAllOnPage(): void {
+    const items = this.pageSignal()?.items ?? [];
+    const checked = this.checkedIdsSignal();
+    const allChecked = items.length > 0 && items.every(item => checked.has(item.id));
+    this.checkedIdsSignal.set(allChecked ? new Set() : new Set(items.map(item => item.id)));
+  }
+
+  clearBulk(): void {
+    this.checkedIdsSignal.set(new Set());
+    this.bulkResultSignal.set(null);
+    this.bulkErrorSignal.set(null);
+  }
+
+  bulkUpdateStatus(newStatus: RequestStatus, userName: string): void {
+    const checked = this.checkedIdsSignal();
+
+    // Each item carries the RowVersion the user is looking at, so stale rows come back as Conflict.
+    const items = (this.pageSignal()?.items ?? [])
+      .filter(item => checked.has(item.id))
+      .map(item => ({ id: item.id, rowVersion: item.rowVersion }));
+
+    if (items.length === 0) {
+      return;
+    }
+
+    this.bulkSavingSignal.set(true);
+    this.bulkResultSignal.set(null);
+    this.bulkErrorSignal.set(null);
+
+    this.api.bulkUpdateStatus(newStatus, items, userName).subscribe({
+      next: result => {
+        this.bulkSavingSignal.set(false);
+        this.bulkResultSignal.set(result);
+        this.reload();
+        this.loadStatistics();
+
+        // Keep the details panel in sync if the open request was part of the update.
+        const selected = this.selectedSignal();
+        if (selected && result.results.some(r => r.id === selected.id && r.outcome === 'Updated')) {
+          this.refreshSelected(selected.id);
+        }
+      },
+      error: (error: HttpErrorResponse) => {
+        this.bulkSavingSignal.set(false);
+        this.bulkErrorSignal.set(toErrorMessage(error));
+      }
+    });
+  }
+
+  // ---------- Helpers ----------
 
   private refreshSelected(id: number): void {
     this.api.getById(id).subscribe({

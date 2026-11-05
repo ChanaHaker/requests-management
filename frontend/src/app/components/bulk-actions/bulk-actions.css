@@ -1,0 +1,111 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px;
+  background: #fff8e6;
+  border: 1px solid #f0d58c;
+  border-radius: 8px;
+}
+
+.bar strong {
+  align-self: center;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #4a5663;
+}
+
+select, input {
+  padding: 6px 8px;
+  border: 1px solid #c8d0da;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+}
+
+.primary {
+  padding: 7px 18px;
+  border: none;
+  border-radius: 6px;
+  background: #1f4e79;
+  color: #fff;
+  cursor: pointer;
+}
+
+.primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.secondary {
+  padding: 7px 14px;
+  border: 1px solid #c8d0da;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  color: #922b21;
+}
+
+.message {
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.message.success {
+  background: #eafaf1;
+  border: 1px solid #a9dfbf;
+  color: #1e8449;
+}
+
+.message.partial {
+  background: #fef5e7;
+  border: 1px solid #f5cba7;
+  color: #9c640c;
+}
+
+.message.error {
+  background: #fdf2f1;
+  border: 1px solid #e6b0aa;
+  color: #922b21;
+}
+
+.summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close {
+  border: none;
+  background: none;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+ul {
+  margin: 6px 0 0;
+  padding-inline-start: 20px;
+}
+
+.detail {
+  font-size: 12px;
+  opacity: 0.8;
+}

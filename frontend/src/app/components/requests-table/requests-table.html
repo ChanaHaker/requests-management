@@ -2,6 +2,10 @@
   <table>
     <thead>
       <tr>
+        <th class="check">
+          <input type="checkbox" aria-label="בחירת כל הפניות בעמוד"
+                 [checked]="allChecked()" (change)="toggleAll.emit()" />
+        </th>
         <th>#</th>
         <th><button type="button" (click)="sortChange.emit('Title')">כותרת {{ sortIndicator('Title') }}</button></th>
         <th><button type="button" (click)="sortChange.emit('OrganizationName')">ארגון {{ sortIndicator('OrganizationName') }}</button></th>
@@ -14,7 +18,14 @@
     </thead>
     <tbody>
       @for (item of result().items; track item.id) {
-        <tr [class.selected]="item.id === selectedId()" (click)="selectRequest.emit(item)">
+        <tr [class.selected]="item.id === selectedId()"
+            [class.checked]="checkedIds().has(item.id)"
+            (click)="selectRequest.emit(item)">
+          <!-- Clicking the checkbox must not open the details panel. -->
+          <td class="check" (click)="$event.stopPropagation()">
+            <input type="checkbox" [attr.aria-label]="'בחירת פנייה ' + item.id"
+                   [checked]="checkedIds().has(item.id)" (change)="toggleChecked.emit(item.id)" />
+          </td>
           <td>{{ item.id }}</td>
           <td>{{ item.title }}</td>
           <td>{{ item.organizationName }}</td>
